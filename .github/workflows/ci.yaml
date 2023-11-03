@@ -44,7 +44,7 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Earthly version
-      run: earthly --version
-    - name: Run build
-      run: earthly --ci --push +build-all-platforms
+      - name: Earthly version
+        run: earthly --version
+      - name: Run build
+        run: earthly --ci --push +build-all-platforms
