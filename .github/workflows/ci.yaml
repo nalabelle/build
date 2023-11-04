@@ -53,4 +53,4 @@ jobs:
       - name: Earthly version
         run: earthly --version
       - name: Run build
-        run: earthly --ci --push +build-all-platforms
+        run: cd images && earthly --ci --push +build-all-platforms
