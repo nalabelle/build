@@ -6,7 +6,7 @@ ARG --global EARTHLY_GIT_PROJECT_NAME
 ARG --global EARTHLY_TARGET_TAG
 ARG --global EARTHLY_TARGET_TAG_DOCKER
 ARG --global TARGETARCH
-FROM ghcr.io/nalabelle/build/debian12
+FROM ghcr.io/nalabelle/build/debian12@sha256:72d9a3e195826990664c024ee1e54758fbc3484bfc57ae6d920464b81efebb23
 
 SAVE_IMAGE:
   COMMAND
