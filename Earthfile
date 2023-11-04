@@ -4,68 +4,40 @@ ARG --global EARTHLY_GIT_BRANCH
 ARG --global EARTHLY_GIT_COMMIT_TIMESTAMP
 ARG --global EARTHLY_GIT_PROJECT_NAME
 ARG --global EARTHLY_TARGET_TAG
+ARG --global EARTHLY_TARGET_TAG_DOCKER
 ARG --global TARGETARCH
-FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
-
-build-all-platforms:
-  BUILD --platform=linux/amd64 --platform=linux/arm64 +build
-
-build:
-  BUILD +debian12
-  BUILD +helm
-
-helmfile:
-  FROM DOCKERFILE --target helmfile-${TARGETARCH} -f digests.Dockerfile .
+FROM ghcr.io/nalabelle/build/debian12
 
 SAVE_IMAGE:
   COMMAND
   ARG EARTHLY_TARGET_NAME
-  ARG IMAGE=${REGISTRY}/${EARTHLY_GIT_PROJECT_NAME}/${EARTHLY_TARGET_NAME}
-  IF [ "${EARTHLY_TARGET_TAG}" = "main" ]
-    SAVE IMAGE --push ${IMAGE}:latest
-    SAVE IMAGE --push ${IMAGE}:0.1.${EARTHLY_GIT_COMMIT_TIMESTAMP}
+  ARG registry="${REGISTRY}"
+  ARG project=${EARTHLY_GIT_PROJECT_NAME}
+  ARG target="${EARTHLY_TARGET_NAME}"
+  ARG patch="${EARTHLY_GIT_COMMIT_TIMESTAMP}"
+  ARG version="0.1"
+  ARG latest=false
+  ARG variant=""
+  IF [ $(echo "${VERSION}" | tr -cd '.' | wc -m) -le 1 ]
+    ARG version_tag="${version}.${EARTHLY_GIT_COMMIT_TIMESTAMP}"
+  ELSE
+    ARG version_tag="${version}"
   END
 
-
-debian12:
-  FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
-
-  ARG DEBIAN_FRONTEND=noninteractive
-  ENV LANG="C.UTF-8"
-  ENV LC_ALL="C.UTF-8"
-  ENV TZ="Etc/UTC"
-
-  RUN groupadd --gid 1999 user
-  RUN useradd --system \
-    --uid 1999 \
-    --gid 1999 \
-    --no-log-init \
-    --shell /bin/bash \
-    user
-
-  RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-      ca-certificates \
-      curl \
-    && rm -rf /var/lib/apt/lists/*
-  DO --pass-args +SAVE_IMAGE
-
-helm:
-  FROM --pass-args +debian12
-  COPY (+helm-build/helm --VERSION=3.13.1) /usr/local/bin/helm
-  USER user
-  DO --pass-args +SAVE_IMAGE
-
-helm-build:
-  ARG --required VERSION
-  ARG _download="helm-v${VERSION}-linux-${TARGETARCH}.tar.gz"
-
-  FROM --pass-args +debian12
-  WORKDIR /build
-  COPY checksums/${_download}.sha256sum .
-  RUN curl -fsSLO https://get.helm.sh/${_download}
-  RUN sha256sum --check --status < ${_download}.sha256sum
-  RUN tar -zxvf ${_download} \
-    && mv linux-${TARGETARCH}/helm helm \
-    && rm -r linux-${TARGETARCH}
-  SAVE ARTIFACT helm /helm
+  ARG IMAGE=${registry}/${project}/${target}
+  IF [ "${EARTHLY_TARGET_TAG}" = "main" ]
+    IF [ "${latest}" = "true" ]
+      SAVE IMAGE --push ${IMAGE}:latest
+    END
+    IF [ -n "${variant}" ]
+      SAVE IMAGE --push ${IMAGE}:${version_tag}
+    ELSE
+      SAVE IMAGE --push ${IMAGE}:${version_tag}-${variant}
+    END
+  ELSE
+    IF [ -n "${variant}" ]
+      SAVE IMAGE ${IMAGE}:${version_tag}-${variant}-${EARTHLY_TARGET_TAG_DOCKER}
+    ELSE
+      SAVE IMAGE ${IMAGE}:${version_tag}-${EARTHLY_TARGET_TAG_DOCKER}
+    END
+  END
