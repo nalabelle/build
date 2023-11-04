@@ -1,5 +1,7 @@
 {
   "packages": {
-    "release": {}
+    "images": {
+      "release-type": "simple"
+    }
   }
 }
