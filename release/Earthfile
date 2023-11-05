@@ -2,7 +2,7 @@ VERSION --pass-args --arg-scope-and-set 0.7
 ARG --global TARGETARCH
 #IMPORT github.com/nalabelle/build AS b
 IMPORT ../ AS b
-FROM ghcr.io/nalabelle/build/debian12
+FROM ghcr.io/nalabelle/build/debian12@sha256:72d9a3e195826990664c024ee1e54758fbc3484bfc57ae6d920464b81efebb23
 
 build-all-platforms:
   BUILD --platform=linux/amd64 --platform=linux/arm64 +build
