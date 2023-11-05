@@ -11,8 +11,3 @@ FROM docker.io/library/python:3.12.0-slim-bookworm@sha256:4e9bf0e7af6ef5b4966486
 FROM docker.io/library/python:3.11.6-slim-bookworm@sha256:52cf1e24d0baa095fd8137e69a13042442d40590f03930388df49fe4ecb8ebdb as python3.11-amd64
 
 FROM docker.io/library/python:3.11.6-slim-bookworm@sha256:25e6046c4bb498c74d00b284580294e3de06c67dc80371418cd95d8140ead9bd as python3.11-arm64
-
-# Helmfile
-FROM ghcr.io/helmfile/helmfile:v0.158.1@sha256:9b11a9a89b5b2bee88ac10ab0dfb5f369ff4543b89b1047d19b766a1ae9127e3 as helmfile-amd64
-
-FROM ghcr.io/helmfile/helmfile:v0.158.1@sha256:1a3b10bb33f6f048b51e9cf8710bcabe025891c44f00008343e150d29897e50f as helmfile-arm64
