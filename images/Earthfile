@@ -1,4 +1,4 @@
-VERSION --pass-args 0.7
+VERSION --pass-args --arg-scope-and-set 0.7
 ARG --global TARGETARCH
 IMPORT ../ AS b
 FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
@@ -8,12 +8,11 @@ build-all-platforms:
 
 build:
   BUILD +debian12
-  BUILD +helm
   BUILD +python3.11
   BUILD +python3.12
 
-helmfile:
-  FROM DOCKERFILE --target helmfile-${TARGETARCH} -f digests.Dockerfile .
+version:
+  DO b+VERSION_CZ
 
 CONFIGURE_ENVIRONMENT:
   COMMAND
@@ -40,6 +39,7 @@ CONFIGURE_DEFAULT_PACKAGES:
           git \
           libc6-dev \
           tzdata \
+          yq \
         && rm -rf /var/lib/apt/lists/*; \
       else \
         echo "The package manager isn't supported"; \
@@ -54,7 +54,8 @@ UPSTREAM:
 
 debian12:
   FROM +debian --version=12
-  DO --pass-args b+SAVE_IMAGE --target=debian --version=12.2
+  COPY (+version/version) /manifests/version
+  DO --pass-args b+SAVE_IMAGE --target=debian --variant=debian12.2 --version=$(cat /manifests/version)
 
 debian:
   DO --pass-args +UPSTREAM
@@ -63,11 +64,13 @@ debian:
 
 python3.12:
   FROM +python --version=3.12
-  DO --pass-args b+SAVE_IMAGE --target=python --version=3.12
+  COPY (+version/version) /manifests/version
+  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.12 --version=$(cat /manifests/version)
 
 python3.11:
   FROM +python --version=3.11
-  DO --pass-args b+SAVE_IMAGE --target=python --version=3.11
+  COPY (+version/version) /manifests/version
+  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.11 --version=$(cat /manifests/version)
 
 python:
   DO --pass-args +UPSTREAM
@@ -95,25 +98,3 @@ POETRY:
       install poetry=="${POETRY_VERSION}"
 
   ENV PATH="${PATH}:${POETRY_VENV}/bin"
-
-helm:
-  FROM --pass-args +debian12
-  # renovate: datasource=github-releases depName=helm/helm
-  ARG HELM_VERSION=3.13.1
-  COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm
-  USER user
-  DO --pass-args b+SAVE_IMAGE --version=${HELM_VERSION}
-
-helm-build:
-  ARG --required VERSION
-  ARG _download="helm-v${VERSION}-linux-${TARGETARCH}.tar.gz"
-
-  FROM --pass-args +debian12
-  WORKDIR /build
-  COPY checksums/${_download}.sha256sum .
-  RUN curl -fsSLO https://get.helm.sh/${_download}
-  RUN sha256sum --check --status < ${_download}.sha256sum
-  RUN tar -zxvf ${_download} \
-    && mv linux-${TARGETARCH}/helm helm \
-    && rm -r linux-${TARGETARCH}
-  SAVE ARTIFACT helm /helm
