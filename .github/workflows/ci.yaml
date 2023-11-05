@@ -54,3 +54,11 @@ jobs:
         run: earthly --version
       - name: Run build
         run: cd images && earthly --ci --push +build-all-platforms
+        env:
+          CI: "true"
+          CI_REF_NAME: "{{ github.ref_name }}"
+          CI_REF_TYPE: "{{ github.ref_type }}"
+          CI_REPOSITORY_URL: "{{ github.repositoryUrl }}"
+          CI_RUN_ID: "{{ github.run_id }}"
+          CI_RUN_NUMBER: "{{ github.run_number }}"
+          CI_SHA: "{{ github.sha }}"
