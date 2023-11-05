@@ -6,9 +6,7 @@ ARG --global EARTHLY_GIT_PROJECT_NAME
 ARG --global EARTHLY_TARGET_TAG
 ARG --global EARTHLY_TARGET_TAG_DOCKER
 ARG --global TARGETARCH
-ARG BASE_IMAGE="ghcr.io/nalabelle/build/debian12@sha256:72d9a3e195826990664c024ee1e54758fbc3484bfc57ae6d920464b81efebb23"
-
-FROM $BASE_IMAGE
+FROM ./images+debian --version=12
 
 manifest-simple-versioning:
   ARG EARTHLY_GIT_COMMIT_TIMESTAMP
@@ -86,14 +84,13 @@ SAVE_IMAGE:
   ARG target="${EARTHLY_TARGET_NAME}"
   ARG --required version
   ARG variant=""
-  DO +STANDARD_LABEL
 
   LET _tag="${version}"
   IF [ -n "${variant}" ]
     SET _tag="${_tag}-${variant}"
   END
   IF [ "${EARTHLY_TARGET_TAG}" != "main" ]
-    SET _tag="${_tag}-${EARTHLY_TARGET_TAG}"
+    SET _tag="${_tag}--${EARTHLY_TARGET_TAG}"
   END
   RUN echo "VERSION: ${_tag}"
 

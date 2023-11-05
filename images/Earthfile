@@ -55,7 +55,10 @@ UPSTREAM:
 debian12:
   FROM +debian --version=12
   COPY (+version/version) /manifests/version
+  DO b+STANDARD_LABEL
   DO --pass-args b+SAVE_IMAGE --target=debian --variant=debian12.2 --version=$(cat /manifests/version)
+  DO --pass-args b+SAVE_IMAGE --target=debian --variant=debian12 --version=$(cat /manifests/version)
+  DO --pass-args b+SAVE_IMAGE --target=debian --version=$(cat /manifests/version)
 
 debian:
   DO --pass-args +UPSTREAM
@@ -65,11 +68,15 @@ debian:
 python3.12:
   FROM +python --version=3.12
   COPY (+version/version) /manifests/version
+  DO b+STANDARD_LABEL
   DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.12 --version=$(cat /manifests/version)
+  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3 --version=$(cat /manifests/version)
+  DO --pass-args b+SAVE_IMAGE --target=python --version=$(cat /manifests/version)
 
 python3.11:
   FROM +python --version=3.11
   COPY (+version/version) /manifests/version
+  DO b+STANDARD_LABEL
   DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.11 --version=$(cat /manifests/version)
 
 python:
