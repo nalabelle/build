@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>nalabelle/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["library/python"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": false
+    }
   ]
 }
