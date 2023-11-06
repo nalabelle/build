@@ -18,7 +18,21 @@ manifest-simple-versioning:
       fi
   SAVE ARTIFACT version
 
+# commitizen version comes from a ... lot of types of files
+# rough first pass supporting .cz.toml
+# https://commitizen-tools.github.io/commitizen/config/#version-providers
 VERSION_CZ:
+  COMMAND
+  ARG config=".cz.toml"
+  COPY ${config} cz_config
+  RUN grep 'version =' cz_config | cut -d'"' -f2 > version
+  # Fixes a bug in the earthly lexer where it's looking for an additional quote
+  # "
+  SAVE ARTIFACT version
+
+# release-please uses a version.txt file for the simple config
+# https://github.com/googleapis/release-please
+VERSION_RELEASE_PLEASE_SIMPLE:
   COMMAND
   COPY version.txt version
   SAVE ARTIFACT version
