@@ -1,0 +1,58 @@
+#!/bin/bash
+set -euo pipefail
+DEBUG=
+if [ -n "${INPUT_DEBUG:-}" ] && [ "false" != "${INPUT_DEBUG}" ]; then
+  DEBUG="true"
+fi
+
+__print_padding="$(printf '%0.1s' -{1..80})"
++header() {
+  local width
+  local left
+  local right
+  width="40"
+  # subtract x from the width and then subtract length of $1 and divide by 2
+  left="$(( (width - 2 - ${#1}) /2 ))"
+  right="$(( (width - 1 - ${#1}) /2 ))"
+  printf '%*.*s %s %*.*s\n' \
+    0 "$left" "$__print_padding" "$1" 0 "$right" "$__print_padding"
+
+}
+
+export GIT_CONFIG_GLOBAL=/tmp/gitconfig
+git config --global user.name github-actions[bot]
+git config --global user.email 41898282+github-actions[bot]@users.noreply.github.com
+
++header "ENVIRONMENT"
+echo "GIT VERSION: $(git --version)"
+echo "COMMITIZEN VERSION: $(cz version)"
+echo "DEBUG: ${DEBUG}"
+echo ""
+
++header "PROJECT"
+echo "REQUESTED PATH: ${INPUT_PROJECT_PATH}"
+_project_path="$(realpath "${INPUT_PROJECT_PATH}")"
+echo "PATH: ${_project_path}"
+pushd "${_project_path}" > /dev/null
+_prev_version="$(cz version --project 2>/dev/null)"
+[ -n "${_prev_version}" ] || _prev_version="NOT VERSIONED"
+echo "PREVIOUS VERSION: ${_prev_version}"
+echo ""
+
++header "RUN"
+_dry_run=
+[ "${DEBUG}" ] && _dry_run="--dry-run" && echo "DEBUG: DRY RUN"
+# --no-verify to skip having to run pre-commit again in here
+cz bump ${_dry_run} \
+  --yes \
+  --check-consistency \
+  --changelog \
+  --no-verify
+
++header "RESULTS"
+_new_version="$(cz version --project)"
+echo "NEW VERSION: ${_prev_version}"
+if [ -n "${GITHUB_ACTION:-}" ]; then
+  echo "REVISION=${_new_version}" >> "${GITHUB_ENV}"
+  echo "version=${_new_version}" >> "${GITHUB_OUTPUT}"
+fi

@@ -1,0 +1,43 @@
+VERSION --pass-args --arg-scope-and-set 0.7
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+ARG --global TARGETARCH
+IMPORT ../manifests AS manifests
+
+build-all-platforms:
+  BUILD --platform=linux/amd64 --platform=linux/arm64 +build
+
+build:
+  BUILD +commitizen-build
+
+# GITHUB ACTION NOTES
+# WORKDIR is set by env variable GITHUB_WORKSPACE
+# It will generally be /github/workspace, but don't rely on this
+# Don't use USER because github relies on root
+commitizen-build:
+  ARG COMMITIZEN_VERSION=3.12.0
+  FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
+  ENV PYTHONUNBUFFERED=1
+  RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install \
+        commitizen==$COMMITIZEN_VERSION
+  RUN git --version && cz version
+  RUN git config --system --add safe.directory "*"
+  COPY bin/release-cz-bump /usr/local/bin/release-cz-bump
+  SAVE IMAGE commitizen
+
+run-cz:
+  LOCALLY
+  ARG INPUT_PROJECT_PATH=.
+  ARG INPUT_DEBUG="false"
+  # match GitHub Action workflow
+  LET _path=$(git rev-parse --show-toplevel)
+  RUN echo "Working in: ${_path}"
+  WITH DOCKER --load=+commitizen-build
+    # 100% transferring docker... shows up too late and overwrites output sometimes
+    RUN docker run --rm -t \
+      --user $(id -u):$(id -g) \
+      -e INPUT_PROJECT_PATH \
+      -e INPUT_DEBUG \
+      -v${_path}:/github/workspace \
+      --workdir="/github/workspace" \
+      commitizen release-cz-bump
+  END
