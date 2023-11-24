@@ -1,8 +1,8 @@
 VERSION --pass-args --arg-scope-and-set 0.7
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
 ARG --global TARGETARCH
-#IMPORT github.com/nalabelle/build AS b
-IMPORT ../ AS b
-FROM ../images+debian --version=12
+IMPORT ../manifests AS manifests
 
 build-all-platforms:
   BUILD --platform=linux/amd64 --platform=linux/arm64 +build
@@ -12,14 +12,24 @@ build:
   BUILD +helmfile
 
 helmfile:
+  DO manifests+MANIFEST
+  ARG MANIFEST=$(cat manifest.json)
   FROM DOCKERFILE --target helmfile-${TARGETARCH} -f digests.Dockerfile .
+  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  DO manifests+STANDARD_LABEL
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
 
 helm:
+  DO manifests+MANIFEST
+  ARG MANIFEST=$(cat manifest.json)
+  FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
   # renovate: datasource=github-releases depName=helm/helm
   ARG HELM_VERSION=3.13.1
   COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm
+  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  DO manifests+STANDARD_LABEL
   USER user
-  DO --pass-args b+SAVE_IMAGE --version=${HELM_VERSION}
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
 
 helm-build:
   ARG --required VERSION

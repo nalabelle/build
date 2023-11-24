@@ -1,6 +1,7 @@
 VERSION --pass-args --arg-scope-and-set 0.7
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
 ARG --global TARGETARCH
-IMPORT ../ AS b
+IMPORT ../manifests AS manifests
 FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
 
 build-all-platforms:
@@ -10,9 +11,6 @@ build:
   BUILD +debian12
   BUILD +python3.11
   BUILD +python3.12
-
-version:
-  DO b+VERSION_CZ
 
 CONFIGURE_ENVIRONMENT:
   COMMAND
@@ -26,6 +24,8 @@ CONFIGURE_ENVIRONMENT:
     --gid 1999 \
     --no-log-init \
     --shell /bin/bash \
+    --create-home \
+    --home-dir /app \
     user
 
 CONFIGURE_DEFAULT_PACKAGES:
@@ -46,40 +46,35 @@ CONFIGURE_DEFAULT_PACKAGES:
         false; \
       fi
 
-UPSTREAM:
-  COMMAND
-  ARG --required version
-  ARG EARTHLY_TARGET_NAME
-  FROM DOCKERFILE --target ${EARTHLY_TARGET_NAME}${version}-${TARGETARCH} -f digests.Dockerfile .
-
 debian12:
   FROM +debian --version=12
-  COPY (+version/version) /manifests/version
-  DO b+STANDARD_LABEL
-  DO --pass-args b+SAVE_IMAGE --target=debian --variant=debian12 --version=$(cat /manifests/version)
-  DO --pass-args b+SAVE_IMAGE --target=debian --version=$(cat /manifests/version)
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=debian12
 
 debian:
-  DO --pass-args +UPSTREAM
+  ARG version=12
+  DO manifests+MANIFEST
+  ARG MANIFEST=$(cat manifest.json)
+  FROM DOCKERFILE --target debian$version-${TARGETARCH} -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
+  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  DO manifests+STANDARD_LABEL
 
 python3.12:
   FROM +python --version=3.12
-  COPY (+version/version) /manifests/version
-  DO b+STANDARD_LABEL
-  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.12 --version=$(cat /manifests/version)
-  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3 --version=$(cat /manifests/version)
-  DO --pass-args b+SAVE_IMAGE --target=python --version=$(cat /manifests/version)
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=python3.12
 
 python3.11:
   FROM +python --version=3.11
-  COPY (+version/version) /manifests/version
-  DO b+STANDARD_LABEL
-  DO --pass-args b+SAVE_IMAGE --target=python --variant=python3.11 --version=$(cat /manifests/version)
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=python3.11
 
 python:
-  DO --pass-args +UPSTREAM
+  ARG --required version
+  DO manifests+MANIFEST
+  ARG MANIFEST=$(cat manifest.json)
+  FROM DOCKERFILE --target python${version}-${TARGETARCH} -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
   # renovate: datasource=github-releases depName=pypa/pipx
@@ -89,6 +84,8 @@ python:
         && chmod +x /usr/local/bin/pipx \
         && pipx --version
   DO +POETRY
+  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  DO manifests+STANDARD_LABEL
 
 POETRY:
   COMMAND

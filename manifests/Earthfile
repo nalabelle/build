@@ -1,0 +1,71 @@
+VERSION --pass-args --arg-scope-and-set 0.7
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+IMPORT ../info AS info
+
+jinja-cli:
+  FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
+  RUN if command -v apt > /dev/null; then \
+        apt-get update \
+        && DEBIAN_FRONTEND=noninteractive \apt-get install -y --no-install-recommends \
+          moreutils \
+        && rm -rf /var/lib/apt/lists/*; \
+      fi
+  SAVE ARTIFACT /usr/bin/sponge sponge
+  RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
+      install jinja2-cli
+  RUN jinja2 --version
+  COPY manifest.json.j2 .
+  SAVE ARTIFACT manifest.json.j2
+
+core-manifest:
+  FROM +jinja-cli
+  COPY info+combined/info.json info.json
+  RUN jinja2 --strict manifest.json.j2 info.json > manifest.json
+  # clean the manifest
+  RUN jq 'del(..|nulls,select(. == ""))' manifest.json | sponge manifest.json
+  SAVE ARTIFACT manifest.json
+
+MANIFEST:
+  COMMAND
+  FROM +core-manifest
+  DO --pass-args info+COMPONENT
+  RUN jq -s add manifest.json component-info.json | sponge manifest.json
+  SAVE ARTIFACT manifest.json
+
+# Applies Docker labels with metadata that can be searched for
+# https://docs.docker.com/engine/reference/commandline/images/#show-images-with-a-given-label
+STANDARD_LABEL:
+  COMMAND
+  COPY (info+build-time/info) build-time-info.json
+  RUN jq -s add info.json build-time-info.json > info.json.tmp \
+        && mv info.json.tmp info.json \
+        && rm *-info.json
+  RUN --no-cache cat info.json
+  # OCI LABELS
+  LABEL "org.opencontainers.image.source"="$(jq -r '.source.origin' info.json)"
+  LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' info.json)"
+  LABEL "org.opencontainers.image.created"="$(jq -r '.build_time' info.json)"
+
+SAVE_IMAGE:
+  COMMAND
+  ARG --required REGISTRY
+  ARG target=$(jq -r '.target' /info.json)
+  ARG component=$(jq -r '.component' /info.json)
+  ARG version=$(jq -r '.version' /info.json)
+  LET status=$(jq -r '.source.status' /info.json)
+  ARG variant=""
+  ARG IMAGE=${REGISTRY}/${component}/${target}
+
+  LET ref=$(jq -r '.source.ref' /info.json)
+
+  LET tag="$version"
+  IF [ -n "$variant" ]
+    SET tag="$tag-$variant"
+  END
+  IF [ "$ref" != "main" ]
+    SET tag="$tag--$ref"
+  END
+  IF [ "$status" = "dirty" ]
+    SET tag="$tag-DIRTY"
+  END
+  SAVE IMAGE --push $IMAGE:$tag

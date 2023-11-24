@@ -1,0 +1,28 @@
+{%- set github_url = "%s/%s".format(github_server_url, github_repository) -%}
+{
+  "source": {
+    {% if github_sha is defined -%}
+      "id": "{{ github_sha }}",
+    {% else -%}
+      "id": "{{ earthly_git_hash }}",
+    {% endif -%}
+    "origin": "{{ earthly_git_origin_url }}",
+    {% if github_ref_name is defined -%}
+      "ref": "{{ github_ref_name }}",
+    {% else -%}
+      "ref": "{{ earthly_git_branch }}",
+    {% endif -%}
+    "status": "{{ git_status }}",
+    "url": "{{ github_url if github_server_url is defined else "" }}"
+  },
+  "ci": {
+    "earthly": {{ "true" if earthly_ci or "false" }},
+    "github": {{ "true" if github_sha is defined else "false" }}
+    {% if github_run_number is defined -%}
+      , "build-number": "{{ github_run_number }}"
+    {% endif -%}
+    {% if github_run_id is defined -%}
+      , "run-id": "{{ github_run_id }}"
+    {% endif -%}
+  }
+}
