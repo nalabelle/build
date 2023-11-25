@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
 
 git-status:
   ARG EARTHLY_CI
@@ -9,7 +9,7 @@ git-status:
     LOCALLY
     SET GIT_STATUS=$(test -z "$(git status --porcelain)" && echo "clean" || echo "dirty")
   END
-  FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+  FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
   IF [ "$GIT_STATUS" = "dirty" ]
     RUN echo "dirty" > /git-dirty
   END

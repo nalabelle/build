@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
 IMPORT ../info AS info
 
 PRINT:
@@ -63,7 +63,7 @@ MANIFEST:
   SAVE ARTIFACT /lineage.json
 
 generate-manifest-action:
-  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1"
+  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1@sha256:c40e0f87c8bc4f9a255c3c7019c9eec11ff06195b56e8b3036a7b7e28e8bdbd0"
   ARG --required VERSION
   ARG --required COMPONENT
   ARG --required TARGET
