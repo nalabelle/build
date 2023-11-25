@@ -52,8 +52,11 @@ cz bump ${_dry_run} \
 
 +header "RESULTS"
 _new_version="$(cz version --project)"
-echo "NEW VERSION: ${_prev_version}"
+echo "PREVIOUS VERSION: ${_prev_version}"
+echo "NEW VERSION: ${_new_version}"
 if [ -n "${GITHUB_ACTION:-}" ]; then
   echo "REVISION=${_new_version}" >> "${GITHUB_ENV}"
   echo "version=${_new_version}" >> "${GITHUB_OUTPUT}"
 fi
+# save the version for the releaser when we're not able to use GITHUB_ACTION ^
+echo "${_new_version}" > version.txt
