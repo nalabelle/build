@@ -1,8 +1,12 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-ARG --global REGISTRY="ghcr.io/nalabelle/build"
 ARG --global TARGETARCH
-IMPORT ../manifests AS manifests
 FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
+IMPORT ../manifests AS manifests
+IMPORT ../info AS info
+
+ARG --global __COMPONENT__="manifests"
+ARG --global __VERSION__="0.0.1"
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
 
 build-all-platforms:
   BUILD --platform=linux/amd64 --platform=linux/arm64 +build
@@ -53,13 +57,15 @@ debian12:
 
 debian:
   ARG version=12
-  DO manifests+MANIFEST
-  ARG MANIFEST=$(cat manifest.json)
   FROM DOCKERFILE --target debian$version-${TARGETARCH} -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
-  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  DO manifests+MANIFEST \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
+  DO manifests+PRINT
 
 python3.12:
   FROM +python --version=3.12

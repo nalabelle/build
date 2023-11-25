@@ -1,5 +1,8 @@
 {%- set github_url = "%s/%s".format(github_server_url, github_repository) -%}
 {
+  "target": "{{ target }}",
+  "component": "{{ component }}",
+  "version": "{{ version }}",
   "source": {
     {% if github_sha is defined -%}
       "id": "{{ github_sha }}",
@@ -16,7 +19,7 @@
     "url": "{{ github_url if github_server_url is defined else "" }}"
   },
   "ci": {
-    "earthly": {{ "true" if earthly_ci or "false" }},
+    "earthly": {{ earthly_ci }},
     "github": {{ "true" if github_sha is defined else "false" }}
     {% if github_run_number is defined -%}
       , "build-number": "{{ github_run_number }}"

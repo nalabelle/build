@@ -1,79 +1,16 @@
 VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
 
-gathered:
-  COPY +earthly/info earthly-info.json
-  COPY +github/info github-info.json
-  COPY +git/info git-info.json
-  # COMPONENT needs to be called separately
-  SAVE ARTIFACT ./*-info.json
-
-combined:
-  FROM +gathered
-  RUN jq -s add *info.json > info.json
-  SAVE ARTIFACT info.json
-
-COMPONENT:
-  COMMAND
-  ARG EARTHLY_TARGET_NAME
-  ARG TARGET=${EARTHLY_TARGET_NAME}
-  COPY component.toml .
-  RUN cat component.toml | tomlq > raw-component.json
-  RUN jq --arg target "$TARGET" \
-      '. += {"target": $target}' raw-component.json > component-info.json
-  SAVE ARTIFACT component-info.json
-
-build-time:
-  RUN --no-cache jq -n --arg date "$(date --rfc-3339=seconds)" \
-      '{"build_time": $date}' > info
-  SAVE ARTIFACT info
-
-earthly:
-  ARG EARTHLY_GIT_HASH
-  ARG EARTHLY_GIT_BRANCH
-  ARG EARTHLY_GIT_ORIGIN_URL
+git-status:
   ARG EARTHLY_CI
-  RUN jq -n --arg prefix "EARTHLY" \
-      '$ENV \
-      | with_entries(select(.key | startswith($prefix))) \
-      | with_entries(.key |= ascii_downcase) \
-      | del(..|nulls,select(. == ""))' > info
-  SAVE ARTIFACT info
-
-git:
-  ARG EARTHLY_CI
+  LET GIT_STATUS="clean"
   IF [ "$EARTHLY_CI" != "true" ]
     # We should never have a dirty git ref outside of dev
     LOCALLY
-    ARG GIT_STATUS=$(test -z "$(git status --porcelain)" && echo "clean" || echo "dirty")
-    RUN jq -n --arg prefix "GIT" \
-        '$ENV \
-        | with_entries(select(.key | startswith($prefix))) \
-        | with_entries(.key |= ascii_downcase) \
-        | del(..|nulls,select(. == ""))' > /tmp/info
-        SAVE ARTIFACT /tmp/info info
-        RUN rm /tmp/info
-  ELSE
-    ARG GIT_STATUS="clean"
-    RUN jq -n --arg prefix "GIT" \
-        '$ENV \
-        | with_entries(select(.key | startswith($prefix))) \
-        | with_entries(.key |= ascii_downcase) \
-        | del(..|nulls,select(. == ""))' > info
-        SAVE ARTIFACT info
+    SET GIT_STATUS=$(test -z "$(git status --porcelain)" && echo "clean" || echo "dirty")
   END
-
-github:
-  ARG GITHUB_ACTION
-  ARG GITHUB_REF_NAME
-  ARG GITHUB_REPOSITORY
-  ARG GITHUB_RUN_ID
-  ARG GITHUB_RUN_NUMBER
-  ARG GITHUB_SERVER_URL
-  ARG GITHUB_SHA
-  RUN jq -n --arg prefix "GITHUB" \
-      '$ENV \
-      | with_entries(select(.key | startswith($prefix))) \
-      | with_entries(.key |= ascii_downcase) \
-      | del(..|nulls,select(. == ""))' > info
-  SAVE ARTIFACT info
+  FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+  IF [ "$GIT_STATUS" = "dirty" ]
+    RUN echo "dirty" > /git-dirty
+  END
+  SAVE ARTIFACT --if-exists /git-dirty

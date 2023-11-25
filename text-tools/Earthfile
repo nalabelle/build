@@ -1,0 +1,32 @@
+VERSION --pass-args --arg-scope-and-set 0.7
+FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
+IMPORT ../info AS info
+IMPORT ../manifests AS manifests
+
+ARG --global __COMPONENT__="text-tools"
+ARG --global __VERSION__="0.0.1"
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
+
+build-all-platforms:
+  BUILD --platform=linux/amd64 --platform=linux/arm64 +build
+
+build:
+  BUILD +jinja
+
+build-jinja:
+  FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
+  RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
+      install jinja2-cli
+  RUN jinja2 --version
+
+jinja:
+  FROM +build-jinja
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  # Override jinja-image to avoid a circular import
+  DO manifests+MANIFEST \
+    --JINJA_IMAGE="build-jinja" \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
+  DO manifests+STANDARD_LABEL
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+PRINT

@@ -1,0 +1,10 @@
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "semver"
+version = "0.0.1"
+version_files = [
+  "Earthfile:__VERSION__"
+]
+update_changelog_on_bump = true
+major_version_zero = true

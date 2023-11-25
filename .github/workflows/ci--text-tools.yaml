@@ -1,0 +1,25 @@
+name: CI: text-tools
+
+on:
+  schedule:
+    - cron: '16 0 * * 1'
+  push:
+    branches: [ main ]
+    paths:
+      - 'text-tools/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'text-tools/**'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref  }}
+  cancel-in-progress: true
+
+jobs:
+  call-build:
+    uses: nalabelle/build/.github/workflows/ci.yaml@main
+  with:
+    workdir: 'text-tools'
+  secrets:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
