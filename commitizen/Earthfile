@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
+FROM ghcr.io/nalabelle/build/debian:0.1.0-debian12@sha256:276f85431d63ae77d9284cca4be7c81dc106dc000524a7c1c04982b7f725e630
 IMPORT ../info AS info
 IMPORT ../manifests AS manifests
 
@@ -20,7 +20,7 @@ build:
 # Don't use USER because github relies on root
 commitizen:
   ARG COMMITIZEN_VERSION=3.12.0
-  FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11@sha256:c55d5502dd212c6885b680f4803e096fa3c7c45dde0c25df89747176578cfe90
+  FROM ghcr.io/nalabelle/build/python:0.1.0-python3.11@sha256:cbf0be012881fa8f475911723f4fe17243f587aaded822cc873004ebbff77eba
   ENV PYTHONUNBUFFERED=1
   RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install \
         commitizen==$COMMITIZEN_VERSION
