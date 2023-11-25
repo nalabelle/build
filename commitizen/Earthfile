@@ -3,7 +3,6 @@ FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12
 IMPORT ../info AS info
 IMPORT ../manifests AS manifests
 
-ARG --global TARGETARCH
 ARG --global __COMPONENT__="commitizen"
 ARG --global __VERSION__="0.0.1"
 ARG --global REGISTRY="ghcr.io/nalabelle/build"

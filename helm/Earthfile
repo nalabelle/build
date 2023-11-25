@@ -1,8 +1,11 @@
 VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/images/debian:0.1.0
-ARG --global REGISTRY="ghcr.io/nalabelle/build"
-ARG --global TARGETARCH
+IMPORT ../info AS info
 IMPORT ../manifests AS manifests
+
+ARG --global __COMPONENT__="helm"
+ARG --global __VERSION__="0.0.1"
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
 
 build-all-platforms:
   BUILD --platform=linux/amd64 --platform=linux/arm64 +build
@@ -12,26 +15,31 @@ build:
   BUILD +helmfile
 
 helmfile:
-  DO manifests+MANIFEST
-  ARG MANIFEST=$(cat manifest.json)
-  FROM DOCKERFILE --target helmfile-${TARGETARCH} -f digests.Dockerfile .
-  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  FROM ghcr.io/helmfile/helmfile:v0.158.1
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  DO manifests+MANIFEST \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+PRINT
 
 helm:
-  DO manifests+MANIFEST
-  ARG MANIFEST=$(cat manifest.json)
   FROM ghcr.io/nalabelle/build/images/debian:0.1.0
   # renovate: datasource=github-releases depName=helm/helm
   ARG HELM_VERSION=3.13.1
   COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm
-  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  DO manifests+MANIFEST \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
   USER user
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+PRINT
 
 helm-build:
+  ARG TARGETARCH
   ARG --required VERSION
   ARG _download="helm-v${VERSION}-linux-${TARGETARCH}.tar.gz"
 
