@@ -27,6 +27,8 @@ jobs:
           earthly +run-cz \
               --INPUT_PROJECT_PATH="${{ inputs.workdir}}" \
               --INPUT_DEBUG="true"
+          cat ${{ inputs.workdir }}/body.md 2>/dev/null || true
+          cat ${{ inputs.workdir }}/version.txt 2>/dev/null || true
               #- name: Release
               #  uses: softprops/action-gh-release@v1
               #  with:
