@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
+FROM ghcr.io/nalabelle/build/debian:0.1.0-debian12@sha256:276f85431d63ae77d9284cca4be7c81dc106dc000524a7c1c04982b7f725e630
 ARG --global REGISTRY="ghcr.io/nalabelle/build"
 ARG --global TARGETARCH
 IMPORT ../manifests AS manifests
@@ -22,7 +22,7 @@ helmfile:
 helm:
   DO manifests+MANIFEST
   ARG MANIFEST=$(cat manifest.json)
-  FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12@sha256:6d5346b3e643fa3e3eae39c9a1c5b768808dce34e761e181ee00fb3972ba6562
+  FROM ghcr.io/nalabelle/build/debian:0.1.0-debian12@sha256:276f85431d63ae77d9284cca4be7c81dc106dc000524a7c1c04982b7f725e630
   # renovate: datasource=github-releases depName=helm/helm
   ARG HELM_VERSION=3.13.1
   COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm
