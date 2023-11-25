@@ -23,10 +23,11 @@ jobs:
           ref: ${{ github.head_ref || github.ref_name }}
       - name: Create bump and changelog
         run: |
-          cd commitizen
+          pushd commitizen >/dev/null
           earthly +run-cz \
               --INPUT_PROJECT_PATH="${{ inputs.workdir}}" \
               --INPUT_DEBUG="true"
+          popd >/dev/null
           echo "STATUS:"
           git status
           echo "CHANGELOG:"
