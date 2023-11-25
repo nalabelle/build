@@ -80,8 +80,6 @@ python3.11:
 
 python:
   ARG --required version
-  DO manifests+MANIFEST
-  ARG MANIFEST=$(cat manifest.json)
   FROM DOCKERFILE --target python${version}-${TARGETARCH} -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
@@ -92,7 +90,10 @@ python:
         && chmod +x /usr/local/bin/pipx \
         && pipx --version
   DO +POETRY
-  RUN echo "$MANIFEST" > /info.json && cat /info.json
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  DO manifests+MANIFEST \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
 
 POETRY:
