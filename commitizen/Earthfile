@@ -1,19 +1,24 @@
 VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
-ARG --global TARGETARCH
+IMPORT ../info AS info
 IMPORT ../manifests AS manifests
+
+ARG --global TARGETARCH
+ARG --global __COMPONENT__="commitizen"
+ARG --global __VERSION__="0.0.1"
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
 
 build-all-platforms:
   BUILD --platform=linux/amd64 --platform=linux/arm64 +build
 
 build:
-  BUILD +commitizen-build
+  BUILD +commitizen
 
 # GITHUB ACTION NOTES
 # WORKDIR is set by env variable GITHUB_WORKSPACE
 # It will generally be /github/workspace, but don't rely on this
 # Don't use USER because github relies on root
-commitizen-build:
+commitizen:
   ARG COMMITIZEN_VERSION=3.12.0
   FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
   ENV PYTHONUNBUFFERED=1
@@ -22,7 +27,14 @@ commitizen-build:
   RUN git --version && cz version
   RUN git config --system --add safe.directory "*"
   COPY bin/release-cz-bump /usr/local/bin/release-cz-bump
-  SAVE IMAGE commitizen
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  DO manifests+MANIFEST \
+    --JINJA_IMAGE="build-jinja" \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
+  DO manifests+STANDARD_LABEL
+  DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO manifests+PRINT
 
 run-cz:
   LOCALLY
@@ -31,7 +43,7 @@ run-cz:
   # match GitHub Action workflow
   LET _path=$(git rev-parse --show-toplevel)
   RUN echo "Working in: ${_path}"
-  WITH DOCKER --load=+commitizen-build
+  WITH DOCKER --load=+commitizen
     # 100% transferring docker... shows up too late and overwrites output sometimes
     RUN docker run --rm -t \
       --user $(id -u):$(id -g) \
