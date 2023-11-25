@@ -59,11 +59,9 @@ debian:
   FROM DOCKERFILE --target debian$version -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
 
 python3.12:
   FROM +python --version=3.12
@@ -88,11 +86,9 @@ python:
         && chmod +x /usr/local/bin/pipx \
         && pipx --version
   DO +POETRY
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
 
 POETRY:
   COMMAND

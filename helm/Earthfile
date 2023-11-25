@@ -15,11 +15,9 @@ build:
 
 helmfile:
   FROM ghcr.io/helmfile/helmfile:v0.158.1@sha256:280d05ec1b6956db937c7f96c1d11d01189fd16f5a12a1131336bb3926401d0f
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+PRINT
 
@@ -28,11 +26,9 @@ helm:
   # renovate: datasource=github-releases depName=helm/helm
   ARG HELM_VERSION=3.13.1
   COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
   USER user
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+PRINT

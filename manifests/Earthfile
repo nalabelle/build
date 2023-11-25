@@ -3,16 +3,7 @@ FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:23e747ec742e2b868338f837
 
 PRINT:
   COMMAND
-  RUN --no-cache cat /lineage.json && cat /manifest.json
-
-# Applies Docker labels with metadata that can be searched for
-# https://docs.docker.com/engine/reference/commandline/images/#show-images-with-a-given-label
-STANDARD_LABEL:
-  COMMAND
-  # OCI LABELS
-  LABEL "org.opencontainers.image.source"="$(jq -r '.source.origin' /manifest.json)"
-  LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' /manifest.json)"
-  LABEL "org.opencontainers.image.created"="$(jq -r '.build_time' /manifest.json)"
+  RUN --no-cache cat /lineage.json
 
 SAVE_IMAGE:
   COMMAND
@@ -20,164 +11,85 @@ SAVE_IMAGE:
   ARG target=$(jq -r '.target' /manifest.json)
   ARG component=$(jq -r '.component' /manifest.json)
   ARG version=$(jq -r '.version' /manifest.json)
-  LET status=$(jq -r '.source.status' /manifest.json)
   ARG variant=""
+  ARG extra_variants
+  IF [ -n "$variant" ] && [ -n "$extra_variants" ]
+    RUN { echo "--variant and --extra_variants cannot be set at the same time"; false }
+  END
+
   LET IMAGE=${REGISTRY}/${component}/${target}
   IF [ -z "$REGISTRY" ]
     SET IMAGE=${component}/${target}
   END
 
+  # SUFFIX: branch/git status
+  LET suffix=""
+  LET status=$(jq -r '.source.status' /manifest.json)
   LET ref=$(jq -r '.source.ref' /manifest.json)
-
-  LET tag="$version"
-  IF [ -n "$variant" ]
-    SET tag="$tag-$variant"
-  END
   IF [ "$ref" != "main" ]
-    SET tag="$tag--$ref"
+    SET suffix="$ref"
   END
   IF [ "$status" = "dirty" ]
-    SET tag="$tag-DIRTY"
+    SET suffix="$suffix-DIRTY"
   END
-  SAVE IMAGE --push $IMAGE:$tag
 
-##### INFO GATHERING AND OUTPUT #####
+  LET tag="$version"
+  IF [ -n "$extra_variants" ]
+  ELSE
+    IF [ -n "$variant" ]
+      SET tag="$tag-$variant"
+    END
+  END
+
+  SAVE IMAGE --push $IMAGE:$tag
 
 MANIFEST:
   COMMAND
   ARG --required VERSION
   ARG --required COMPONENT
-  ARG EARTHLY_TARGET_NAME
+  ARG --required EARTHLY_TARGET_NAME
   ARG TARGET=${EARTHLY_TARGET_NAME}
-  ARG EXISTING_MANIFEST=$(cat /lineage.json || echo "[]")
-  ARG GIT_STATUS=$(cat /git-dirty || echo "clean")
-  COPY (+generate-manifest-action/*.json \
+  COPY --pass-args (+build-manifest/manifest.json \
         --TARGET=$TARGET \
-        --COMPONENT=$COMPONENT \
-        --VERSION=$VERSION \
-        --GIT_STATUS=$GIT_STATUS \
-        --EXISTING_MANIFEST=$EXISTING_MANIFEST \
-        ) /
+        ) /manifest.json
+  RUN [ -f /lineage.json ] || echo "[]" > /lineage.json \
+      && jq '. += [input]' /lineage.json /manifest.json > /tmp/new-lineage.json \
+      && mv /tmp/new-lineage.json /lineage.json
   SAVE ARTIFACT /manifest.json
   SAVE ARTIFACT /lineage.json
 
-generate-manifest-action:
+  # OCI LABELS
+  LABEL "org.opencontainers.image.source"="$(jq -r '.source.origin' /manifest.json)"
+  LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' /manifest.json)"
+  LABEL "org.opencontainers.image.created"="$(jq -r '.buildTime' /manifest.json)"
+build-manifest:
   ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1@sha256:f3853fea98d736f3ee7e9c6162e2357075eb85a2b1dae1df90bf18fb2ad17eb4"
+  # component info
   ARG --required VERSION
   ARG --required COMPONENT
   ARG --required TARGET
-  ARG --required GIT_STATUS
-  ARG --required EXISTING_MANIFEST
-  FROM $JINJA_IMAGE
-  COPY manifest.json.j2 .
-  SAVE ARTIFACT manifest.json.j2
-  COPY (+component-info/info.json \
-        --TARGET=$TARGET \
-        --COMPONENT=$COMPONENT \
-        --VERSION=$VERSION \
-        ) /info/component.json
-  COPY +combined-env/info.json /info/env.json
-  COPY (+git-status/info.json --GIT_STATUS=$GIT_STATUS) /info/git.json
-  COPY +build-time/info.json /info/build-time.json
-  RUN jq -s add /info/*.json > /info/combined.json
-  RUN jinja2 --strict manifest.json.j2 /info/combined.json > /info/manifest.json.filled
-  # clean the manifest
-  RUN jq 'del(..|nulls,select(. == ""))' /info/manifest.json.filled > manifest.json
-  RUN echo "$EXISTING_MANIFEST" > /info/lineage.json
-  RUN jq '[.]' /manifest.json > /info/lineage-manifest.json
-  RUN jq -s add /info/lineage.json /info/lineage-manifest.json > /lineage.json
-  SAVE ARTIFACT /manifest.json
-  SAVE ARTIFACT /lineage.json
-
-component-info:
-  ARG --required VERSION
-  ARG --required COMPONENT
-  ARG --required TARGET
-  RUN jq -n \
-      --arg target "$TARGET" \
-      --arg component "$COMPONENT" \
-      --arg version "$VERSION" \
-      '. += {"target": $target, "version": $version, "component": $component}' \
-       > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
-
-COMPONENT:
-  COMMAND
-  ARG --required __VERSION__
-  ARG --required __COMPONENT__
-  ARG EARTHLY_TARGET_NAME
-  ARG TARGET=${EARTHLY_TARGET_NAME}
-  COPY (+component-info/info.json \
-        --TARGET=$TARGET \
-        --COMPONENT=$__COMPONENT__ \
-        --VERSION=$__VERSION__ \
-        ) /manifests/component.json
-  SAVE ARTIFACT /manifests/component.json
-
-# build-time generates the current build time and exports it to info.json
-# This can be an expensive operation and as it needs to be uncached.
-build-time:
-  RUN --no-cache jq -n --arg date "$(date --rfc-3339=seconds)" \
-      '{"build_time": $date}' > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
-
-# git-dirty runs locally when not in CI and outputs a /git-dirty file if the worktree is dirty.
-# It requires --allow-privileged on import.
-git-dirty:
-  ARG EARTHLY_CI
-  LET GIT_STATUS="clean"
-  IF [ "$EARTHLY_CI" != "true" ]
-    # We should never have a dirty git ref outside of dev
-    LOCALLY
-    SET GIT_STATUS=$(test -z "$(git status --porcelain)" && echo "clean" || echo "dirty")
-  END
-  FROM ghcr.io/nalabelle/build/images/debian:0.1.0
-  IF [ "$GIT_STATUS" = "dirty" ]
-    RUN echo "dirty" > /git-dirty
-  END
-  SAVE ARTIFACT --if-exists /git-dirty
-
-# git-status takes a git status ("clean" or "dirty" - whether the worktree has
-# uncommitted changes) and outputs it via info.json
-git-status:
-  ARG --required GIT_STATUS
-  RUN --no-cache jq -n --arg status "$GIT_STATUS" \
-      '{"git_status": $status}' > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
-
-# combined-env merges the infos gathered from the env targets and merges and exports them
-# via info.json
-combined-env:
-  COPY +earthly-env/info.json /tmp/earthly-info.json
-  COPY +github-env/info.json /tmp/github-info.json
-  RUN jq -s add /tmp/*info.json > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
-
-# earthly gathers EARTHLY-prefixed env variables and outputs them to info.json
-earthly-env:
+  ARG GIT_STATUS="clean"
+  # earthly info
   ARG EARTHLY_GIT_HASH
   ARG EARTHLY_GIT_BRANCH
   ARG EARTHLY_GIT_ORIGIN_URL
   ARG EARTHLY_CI
-  RUN jq -n --arg prefix "EARTHLY" \
-      '$ENV \
-      | with_entries(select(.key | startswith($prefix))) \
-      | with_entries(.key |= ascii_downcase) \
-      | del(..|nulls,select(. == ""))' > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
-
-# earthly gathers GITHUB-prefixed env variables and outputs them to info.json
-github-env:
-  ARG GITHUB_ACTION
-  ARG GITHUB_REF_NAME
-  ARG GITHUB_REPOSITORY
-  ARG GITHUB_RUN_ID
-  ARG GITHUB_RUN_NUMBER
-  ARG GITHUB_SERVER_URL
-  ARG GITHUB_SHA
-  RUN jq -n --arg prefix "GITHUB" \
-      '$ENV \
-      | with_entries(select(.key | startswith($prefix))) \
-      | with_entries(.key |= ascii_downcase) \
-      | del(..|nulls,select(. == ""))' > /tmp/info.json
-  SAVE ARTIFACT /tmp/info.json info.json
+  # github info
+  ARG GITHUB_ACTION=""
+  ARG GITHUB_REF_NAME=""
+  ARG GITHUB_REPOSITORY=""
+  ARG GITHUB_RUN_ID=""
+  ARG GITHUB_RUN_NUMBER=""
+  ARG GITHUB_SERVER_URL=""
+  ARG GITHUB_SHA=""
+  FROM $JINJA_IMAGE
+  COPY manifest.json.j2 .
+  RUN export EARTHLY_TEST="$(date --rfc-3339=seconds)"
+  RUN env | sort | grep -E 'VERSION|TARGET|COMPONENT|GITHUB_|EARTHLY_|GIT_' > dotenv
+  IF [ -n "$EARTHLY_CI" ]
+    RUN --no-cache printf "BUILD_TIME=%s" "$(date --rfc-3339=seconds)" >> dotenv
+  ELSE
+    RUN printf "BUILD_TIME=%s" "$(date --rfc-3339=seconds)" >> dotenv
+  END
+  RUN jinja2 --format=env --strict manifest.json.j2 dotenv > manifest.json
+  SAVE ARTIFACT manifest.json

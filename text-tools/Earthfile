@@ -20,11 +20,8 @@ build-jinja:
 
 jinja:
   FROM +build-jinja
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  # If working on this, override jinja-image to avoid a circular import
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+PRINT
