@@ -100,7 +100,7 @@ generate-manifest-action:
   IF [ -n "$JINJA_IMAGE" ]
     FROM +$JINJA_IMAGE
   ELSE
-    FROM ghcr.io/nalabelle/build/manifests/jinja:0.0.1
+    FROM ghcr.io/nalabelle/build/text-tools/jinja:0.0.1
   END
   COPY manifest.json.j2 .
   SAVE ARTIFACT manifest.json.j2
