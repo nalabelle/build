@@ -27,6 +27,8 @@ jobs:
           earthly +run-cz \
               --INPUT_PROJECT_PATH="${{ inputs.workdir}}" \
               --INPUT_DEBUG="true"
+          echo "STATUS:"
+          git status
           echo "CHANGELOG:"
           cat ./${{ inputs.workdir }}/body.md 2>/dev/null || true
           echo "VERSION:"
