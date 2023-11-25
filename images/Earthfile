@@ -1,7 +1,6 @@
 VERSION --pass-args --arg-scope-and-set 0.7
 FROM DOCKERFILE --target debian12 -f digests.Dockerfile .
 IMPORT ../manifests AS manifests
-IMPORT ../info AS info
 
 ARG --global __COMPONENT__="images"
 ARG --global __VERSION__="0.1.0"
@@ -60,7 +59,7 @@ debian:
   FROM DOCKERFILE --target debian$version -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
-  COPY --if-exists info+git-status/git-dirty /git-dirty
+  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
   DO manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
@@ -89,7 +88,7 @@ python:
         && chmod +x /usr/local/bin/pipx \
         && pipx --version
   DO +POETRY
-  COPY --if-exists info+git-status/git-dirty /git-dirty
+  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
   DO manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__

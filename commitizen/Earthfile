@@ -1,6 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12@sha256:04a16d3b867ae233ebc28effcb8cc781f2651ecb69104261818a2168dd5e9beb
-IMPORT ../info AS info
 IMPORT ../manifests AS manifests
 
 ARG --global __COMPONENT__="commitizen"
@@ -26,7 +25,7 @@ commitizen:
   RUN git --version && cz version
   RUN git config --system --add safe.directory "*"
   COPY bin/release-cz-bump /usr/local/bin/release-cz-bump
-  COPY --if-exists info+git-status/git-dirty /git-dirty
+  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
   DO manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
