@@ -4,7 +4,7 @@ FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
 IMPORT ../manifests AS manifests
 IMPORT ../info AS info
 
-ARG --global __COMPONENT__="manifests"
+ARG --global __COMPONENT__="images"
 ARG --global __VERSION__="0.1.0"
 ARG --global REGISTRY="ghcr.io/nalabelle/build"
 
