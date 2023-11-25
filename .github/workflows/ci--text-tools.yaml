@@ -20,7 +20,7 @@ concurrency:
 jobs:
   call-build:
     uses: nalabelle/build/.github/workflows/ci.yaml@main
-  with:
-    workdir: 'text-tools'
-  secrets:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      workdir: 'text-tools'
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
