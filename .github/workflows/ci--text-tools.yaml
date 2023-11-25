@@ -14,7 +14,7 @@ on:
       - 'text-tools/**'
 
 concurrency:
-  group: ${{ github.head_ref || github.ref  }}
+  group: ci--text-tools-${{ github.head_ref || github.ref  }}
   cancel-in-progress: true
 
 jobs:

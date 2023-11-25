@@ -14,7 +14,7 @@ on:
       - 'images/**'
 
 concurrency:
-  group: ${{ github.head_ref || github.ref  }}
+  group: ci--images-${{ github.head_ref || github.ref  }}
   cancel-in-progress: true
 
 jobs:
