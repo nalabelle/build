@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/debian:0.1.0-debian12@sha256:276f85431d63ae77d9284cca4be7c81dc106dc000524a7c1c04982b7f725e630
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0
 IMPORT ../info AS info
 
 PRINT:
@@ -50,7 +50,7 @@ MANIFEST:
   ARG --required COMPONENT
   ARG EARTHLY_TARGET_NAME
   ARG TARGET=${EARTHLY_TARGET_NAME}
-  ARG EXISTING_MANIFEST=$(cat /manifest.json || echo "[]")
+  ARG EXISTING_MANIFEST=$(cat /lineage.json || echo "[]")
   ARG GIT_STATUS=$(cat /git-dirty || echo "clean")
   COPY (+generate-manifest-action/*.json \
         --TARGET=$TARGET \
