@@ -25,11 +25,9 @@ commitizen:
   RUN git --version && cz version
   RUN git config --system --add safe.directory "*"
   COPY bin/release-cz-bump /usr/local/bin/release-cz-bump
-  COPY --if-exists manifests+git-dirty/git-dirty /git-dirty
-  DO manifests+MANIFEST \
+  DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
-  DO manifests+STANDARD_LABEL
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+PRINT
 
