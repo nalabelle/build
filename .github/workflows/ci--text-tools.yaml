@@ -1,6 +1,7 @@
-name: CI: text-tools
+name: "CI: text-tools"
 
 on:
+  workflow_dispatch: {}
   schedule:
     - cron: '16 0 * * 1'
   push:
