@@ -28,7 +28,8 @@ jobs:
           fi
           git checkout -b "$branch" || true
       - name: Create bump and changelog
-        run: cd commitizen \
+        run: |
+          cd commitizen \
           && earthly +run-cz \
               --INPUT_PROJECT_PATH="${{ inputs.workdir}}" \
               --INPUT_DEBUG="true"
