@@ -1,4 +1,4 @@
-name: "Bump version: text-tools"
+name: "Versioning: text-tools"
 
 on:
   workflow_dispatch: {}
@@ -10,7 +10,7 @@ on:
 
 jobs:
   bump-version:
-    uses: nalabelle/build/.github/workflows/bumpversion.yaml@main
+    uses: nalabelle/build/.github/workflows/versioning.yaml@main
     permissions:
       contents: read
       packages: write
