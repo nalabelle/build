@@ -54,6 +54,7 @@ debian12:
   FROM +debian --version=12
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=debian12
+  DO manifests+PRINT
 
 debian:
   ARG version=12
@@ -65,16 +66,17 @@ debian:
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
-  DO manifests+PRINT
 
 python3.12:
   FROM +python --version=3.12
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=python3.12
+  DO manifests+PRINT
 
 python3.11:
   FROM +python --version=3.11
   DO manifests+SAVE_IMAGE --REGISTRY=$REGISTRY --variant=python3.11
+  DO manifests+PRINT
 
 python:
   ARG --required version
