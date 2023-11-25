@@ -1,6 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-ARG --global TARGETARCH
-FROM DOCKERFILE --target debian12-${TARGETARCH} -f digests.Dockerfile .
+FROM DOCKERFILE --target debian12 -f digests.Dockerfile .
 IMPORT ../manifests AS manifests
 IMPORT ../info AS info
 
@@ -58,7 +57,7 @@ debian12:
 
 debian:
   ARG version=12
-  FROM DOCKERFILE --target debian$version-${TARGETARCH} -f digests.Dockerfile .
+  FROM DOCKERFILE --target debian$version -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
   COPY --if-exists info+git-status/git-dirty /git-dirty
@@ -80,7 +79,7 @@ python3.11:
 
 python:
   ARG --required version
-  FROM DOCKERFILE --target python${version}-${TARGETARCH} -f digests.Dockerfile .
+  FROM DOCKERFILE --target python${version} -f digests.Dockerfile .
   DO +CONFIGURE_ENVIRONMENT
   DO +CONFIGURE_DEFAULT_PACKAGES
   # renovate: datasource=github-releases depName=pypa/pipx

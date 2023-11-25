@@ -8,7 +8,8 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["library/python"],
       "matchUpdateTypes": ["minor"],
-      "automerge": false
+      "automerge": false,
+      "separateMinorPatch": true
     }
   ]
 }
