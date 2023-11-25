@@ -6,7 +6,7 @@
   "packageRules": [
     {
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["library/python"],
+      "matchPackageNames": ["docker.io/library/python"],
       "automerge": false,
       "separateMinorPatch": true
     }
