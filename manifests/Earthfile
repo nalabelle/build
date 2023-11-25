@@ -2,61 +2,61 @@ VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
 IMPORT ../info AS info
 
-jinja-cli:
+ARG --global __COMPONENT__="manifests"
+ARG --global __VERSION__="0.0.1"
+ARG --global REGISTRY="ghcr.io/nalabelle/build"
+
+build-all-platforms:
+  BUILD --platform=linux/amd64 --platform=linux/arm64 +build
+
+build:
+  BUILD +jinja
+
+build-jinja:
   FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
-  RUN if command -v apt > /dev/null; then \
-        apt-get update \
-        && DEBIAN_FRONTEND=noninteractive \apt-get install -y --no-install-recommends \
-          moreutils \
-        && rm -rf /var/lib/apt/lists/*; \
-      fi
-  SAVE ARTIFACT /usr/bin/sponge sponge
   RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
       install jinja2-cli
   RUN jinja2 --version
-  COPY manifest.json.j2 .
-  SAVE ARTIFACT manifest.json.j2
 
-core-manifest:
-  FROM +jinja-cli
-  COPY info+combined/info.json info.json
-  RUN jinja2 --strict manifest.json.j2 info.json > manifest.json
-  # clean the manifest
-  RUN jq 'del(..|nulls,select(. == ""))' manifest.json | sponge manifest.json
-  SAVE ARTIFACT manifest.json
+jinja:
+  FROM +build-jinja
+  COPY --if-exists info+git-status/git-dirty /git-dirty
+  # Override jinja-image to avoid a circular import
+  DO +MANIFEST \
+    --JINJA_IMAGE="build-jinja" \
+    --VERSION=$__VERSION__ \
+    --COMPONENT=$__COMPONENT__
+  DO +STANDARD_LABEL
+  DO +SAVE_IMAGE --REGISTRY=$REGISTRY
+  DO +PRINT
 
-MANIFEST:
+PRINT:
   COMMAND
-  FROM +core-manifest
-  DO --pass-args info+COMPONENT
-  RUN jq -s add manifest.json component-info.json | sponge manifest.json
-  SAVE ARTIFACT manifest.json
+  RUN --no-cache cat /lineage.json && cat /manifest.json
 
 # Applies Docker labels with metadata that can be searched for
 # https://docs.docker.com/engine/reference/commandline/images/#show-images-with-a-given-label
 STANDARD_LABEL:
   COMMAND
-  COPY (info+build-time/info) build-time-info.json
-  RUN jq -s add info.json build-time-info.json > info.json.tmp \
-        && mv info.json.tmp info.json \
-        && rm *-info.json
-  RUN --no-cache cat info.json
   # OCI LABELS
-  LABEL "org.opencontainers.image.source"="$(jq -r '.source.origin' info.json)"
-  LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' info.json)"
-  LABEL "org.opencontainers.image.created"="$(jq -r '.build_time' info.json)"
+  LABEL "org.opencontainers.image.source"="$(jq -r '.source.origin' /manifest.json)"
+  LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' /manifest.json)"
+  LABEL "org.opencontainers.image.created"="$(jq -r '.build_time' /manifest.json)"
 
 SAVE_IMAGE:
   COMMAND
   ARG --required REGISTRY
-  ARG target=$(jq -r '.target' /info.json)
-  ARG component=$(jq -r '.component' /info.json)
-  ARG version=$(jq -r '.version' /info.json)
-  LET status=$(jq -r '.source.status' /info.json)
+  ARG target=$(jq -r '.target' /manifest.json)
+  ARG component=$(jq -r '.component' /manifest.json)
+  ARG version=$(jq -r '.version' /manifest.json)
+  LET status=$(jq -r '.source.status' /manifest.json)
   ARG variant=""
-  ARG IMAGE=${REGISTRY}/${component}/${target}
+  LET IMAGE=${REGISTRY}/${component}/${target}
+  IF [ -z "$REGISTRY" ]
+    SET IMAGE=${component}/${target}
+  END
 
-  LET ref=$(jq -r '.source.ref' /info.json)
+  LET ref=$(jq -r '.source.ref' /manifest.json)
 
   LET tag="$version"
   IF [ -n "$variant" ]
@@ -69,3 +69,132 @@ SAVE_IMAGE:
     SET tag="$tag-DIRTY"
   END
   SAVE IMAGE --push $IMAGE:$tag
+
+##### INFO GATHERING AND OUTPUT #####
+
+MANIFEST:
+  COMMAND
+  ARG --required VERSION
+  ARG --required COMPONENT
+  ARG EARTHLY_TARGET_NAME
+  ARG TARGET=${EARTHLY_TARGET_NAME}
+  ARG EXISTING_MANIFEST=$(cat /manifest.json || echo "[]")
+  ARG GIT_STATUS=$(cat /git-dirty || echo "clean")
+  COPY (+generate-manifest-action/*.json \
+        --TARGET=$TARGET \
+        --COMPONENT=$COMPONENT \
+        --VERSION=$VERSION \
+        --GIT_STATUS=$GIT_STATUS \
+        --EXISTING_MANIFEST=$EXISTING_MANIFEST \
+        ) /
+  SAVE ARTIFACT /manifest.json
+  SAVE ARTIFACT /lineage.json
+
+generate-manifest-action:
+  ARG JINJA_IMAGE=""
+  ARG --required VERSION
+  ARG --required COMPONENT
+  ARG --required TARGET
+  ARG --required GIT_STATUS
+  ARG --required EXISTING_MANIFEST
+  IF [ -n "$JINJA_IMAGE" ]
+    FROM +$JINJA_IMAGE
+  ELSE
+    FROM ghcr.io/nalabelle/build/manifests/jinja:0.0.1
+  END
+  COPY manifest.json.j2 .
+  SAVE ARTIFACT manifest.json.j2
+  COPY (+component-info/info.json \
+        --TARGET=$TARGET \
+        --COMPONENT=$COMPONENT \
+        --VERSION=$VERSION \
+        ) /info/component.json
+  COPY +combined-env/info.json /info/env.json
+  COPY (+git-status/info.json --GIT_STATUS=$GIT_STATUS) /info/git.json
+  COPY +build-time/info.json /info/build-time.json
+  RUN jq -s add /info/*.json > /info/combined.json
+  RUN jinja2 --strict manifest.json.j2 /info/combined.json > /info/manifest.json.filled
+  # clean the manifest
+  RUN jq 'del(..|nulls,select(. == ""))' /info/manifest.json.filled > manifest.json
+  RUN echo "$EXISTING_MANIFEST" > /info/lineage.json
+  RUN jq '[.]' /manifest.json > /info/lineage-manifest.json
+  RUN jq -s add /info/lineage.json /info/lineage-manifest.json > /lineage.json
+  SAVE ARTIFACT /manifest.json
+  SAVE ARTIFACT /lineage.json
+
+component-info:
+  ARG --required VERSION
+  ARG --required COMPONENT
+  ARG --required TARGET
+  RUN jq -n \
+      --arg target "$TARGET" \
+      --arg component "$COMPONENT" \
+      --arg version "$VERSION" \
+      '. += {"target": $target, "version": $version, "component": $component}' \
+       > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
+
+COMPONENT:
+  COMMAND
+  ARG --required __VERSION__
+  ARG --required __COMPONENT__
+  ARG EARTHLY_TARGET_NAME
+  ARG TARGET=${EARTHLY_TARGET_NAME}
+  COPY (+component-info/info.json \
+        --TARGET=$TARGET \
+        --COMPONENT=$__COMPONENT__ \
+        --VERSION=$__VERSION__ \
+        ) /manifests/component.json
+  SAVE ARTIFACT /manifests/component.json
+
+# build-time generates the current build time and exports it to info.json
+# This can be an expensive operation and as it needs to be uncached.
+build-time:
+  RUN --no-cache jq -n --arg date "$(date --rfc-3339=seconds)" \
+      '{"build_time": $date}' > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
+
+# git-status takes a git status ("clean" or "dirty" - whether the worktree has
+# uncommitted changes) and outputs it via info.json
+git-status:
+  ARG --required GIT_STATUS
+  RUN --no-cache jq -n --arg status "$GIT_STATUS" \
+      '{"git_status": $status}' > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
+
+# combined-env merges the infos gathered from the env targets and merges and exports them
+# via info.json
+combined-env:
+  COPY +earthly-env/info.json /tmp/earthly-info.json
+  COPY +github-env/info.json /tmp/github-info.json
+  RUN jq -s add /tmp/*info.json > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
+
+# earthly gathers EARTHLY-prefixed env variables and outputs them to info.json
+earthly-env:
+  ARG EARTHLY_GIT_HASH
+  ARG EARTHLY_GIT_BRANCH
+  ARG EARTHLY_GIT_ORIGIN_URL
+  ARG EARTHLY_CI
+  RUN jq -n --arg prefix "EARTHLY" \
+      '$ENV \
+      | with_entries(select(.key | startswith($prefix))) \
+      | with_entries(.key |= ascii_downcase) \
+      | del(..|nulls,select(. == ""))' > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
+
+# earthly gathers GITHUB-prefixed env variables and outputs them to info.json
+github-env:
+  ARG GITHUB_ACTION
+  ARG GITHUB_REF_NAME
+  ARG GITHUB_REPOSITORY
+  ARG GITHUB_RUN_ID
+  ARG GITHUB_RUN_NUMBER
+  ARG GITHUB_SERVER_URL
+  ARG GITHUB_SHA
+  RUN jq -n --arg prefix "GITHUB" \
+      '$ENV \
+      | with_entries(select(.key | startswith($prefix))) \
+      | with_entries(.key |= ascii_downcase) \
+      | del(..|nulls,select(. == ""))' > /tmp/info.json
+  SAVE ARTIFACT /tmp/info.json info.json
