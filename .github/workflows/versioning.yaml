@@ -25,19 +25,18 @@ jobs:
         run: |
           pushd commitizen >/dev/null
           earthly +run-cz \
-              --INPUT_PROJECT_PATH="${{ inputs.workdir}}" \
-              --INPUT_DEBUG="true"
+              --INPUT_PROJECT_PATH="${{ inputs.workdir }}"
           popd >/dev/null
           echo "STATUS:"
           git status
           echo "CHANGELOG:"
-          cat ./${{ inputs.workdir }}/body.md 2>/dev/null || true
+          cat ${{ inputs.workdir }}/body.md 2>/dev/null || true
           echo "VERSION:"
-          cat ./${{ inputs.workdir }}/version.txt 2>/dev/null || true
-              #- name: Release
-              #  uses: softprops/action-gh-release@v1
-              #  with:
-              #    body_path: "${{ inputs.workdir }}/body.md"
-              #    tag_name: "${{ env.REVISION }}"
-              #  env:
-              #    GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          cat ${{ inputs.workdir }}/version.txt 2>/dev/null || true
+          #      - name: Release
+          #        uses: softprops/action-gh-release@v1
+          #        with:
+          #          body_path: "${{ inputs.workdir }}/body.md"
+          #          tag_name: "${{ env.REVISION }}"
+          #        env:
+          #          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
