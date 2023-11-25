@@ -22,5 +22,3 @@ jobs:
     uses: nalabelle/build/.github/workflows/ci.yaml@main
     with:
       workdir: 'images'
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
