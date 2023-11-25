@@ -1,6 +1,7 @@
-name: CI: images
+name: "CI: images"
 
 on:
+  workflow_dispatch: {}
   schedule:
     - cron: '16 0 * * 1'
   push:
