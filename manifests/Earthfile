@@ -2,34 +2,6 @@ VERSION --pass-args --arg-scope-and-set 0.7
 FROM ghcr.io/nalabelle/build/debian:0.0.1-debian12
 IMPORT ../info AS info
 
-ARG --global __COMPONENT__="manifests"
-ARG --global __VERSION__="0.0.1"
-ARG --global REGISTRY="ghcr.io/nalabelle/build"
-
-build-all-platforms:
-  BUILD --platform=linux/amd64 --platform=linux/arm64 +build
-
-build:
-  BUILD +jinja
-
-build-jinja:
-  FROM ghcr.io/nalabelle/build/python:0.0.1-python3.11
-  RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
-      install jinja2-cli
-  RUN jinja2 --version
-
-jinja:
-  FROM +build-jinja
-  COPY --if-exists info+git-status/git-dirty /git-dirty
-  # Override jinja-image to avoid a circular import
-  DO +MANIFEST \
-    --JINJA_IMAGE="build-jinja" \
-    --VERSION=$__VERSION__ \
-    --COMPONENT=$__COMPONENT__
-  DO +STANDARD_LABEL
-  DO +SAVE_IMAGE --REGISTRY=$REGISTRY
-  DO +PRINT
-
 PRINT:
   COMMAND
   RUN --no-cache cat /lineage.json && cat /manifest.json
@@ -91,17 +63,13 @@ MANIFEST:
   SAVE ARTIFACT /lineage.json
 
 generate-manifest-action:
-  ARG JINJA_IMAGE=""
+  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1"
   ARG --required VERSION
   ARG --required COMPONENT
   ARG --required TARGET
   ARG --required GIT_STATUS
   ARG --required EXISTING_MANIFEST
-  IF [ -n "$JINJA_IMAGE" ]
-    FROM +$JINJA_IMAGE
-  ELSE
-    FROM ghcr.io/nalabelle/build/text-tools/jinja:0.0.1
-  END
+  FROM $JINJA_IMAGE
   COPY manifest.json.j2 .
   SAVE ARTIFACT manifest.json.j2
   COPY (+component-info/info.json \
