@@ -63,7 +63,7 @@ MANIFEST:
   SAVE ARTIFACT /lineage.json
 
 generate-manifest-action:
-  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1@sha256:c40e0f87c8bc4f9a255c3c7019c9eec11ff06195b56e8b3036a7b7e28e8bdbd0"
+  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1@sha256:f3853fea98d736f3ee7e9c6162e2357075eb85a2b1dae1df90bf18fb2ad17eb4"
   ARG --required VERSION
   ARG --required COMPONENT
   ARG --required TARGET
