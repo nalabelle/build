@@ -20,5 +20,8 @@ concurrency:
 jobs:
   call-build:
     uses: nalabelle/build/.github/workflows/ci.yaml@main
+    permissions:
+      contents: read
+      packages: write
     with:
       workdir: 'text-tools'
