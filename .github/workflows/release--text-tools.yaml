@@ -9,7 +9,7 @@ on:
       - 'text-tools/**'
 
 jobs:
-  ci:
+  bump-version:
     uses: nalabelle/build/.github/workflows/bumpversion.yaml@main
     permissions:
       contents: read
