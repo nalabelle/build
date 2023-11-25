@@ -1,0 +1,27 @@
+name: "CI: commitizen"
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '16 0 * * 1'
+  push:
+    branches: [ main ]
+    paths:
+      - 'commitizen/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'commitizen/**'
+
+concurrency:
+  group: ${{ github.head_ref || github.ref  }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: nalabelle/build/.github/workflows/ci.yaml@main
+    permissions:
+      contents: read
+      packages: write
+    with:
+      workdir: 'commitizen'
