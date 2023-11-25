@@ -47,7 +47,8 @@ cz bump ${_dry_run} \
   --yes \
   --check-consistency \
   --changelog \
-  --no-verify
+  --no-verify \
+  --changelog-to-stdout | tee > body.md
 
 +header "RESULTS"
 _new_version="$(cz version --project)"
