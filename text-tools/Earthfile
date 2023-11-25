@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/images/debian:0.1.0
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:e049f2ddc44a14de2082d69a4d8c1545d08440b70ea572b3c9308873b1d6e2d8
 IMPORT ../info AS info
 IMPORT ../manifests AS manifests
 
@@ -14,7 +14,7 @@ build:
   BUILD +jinja
 
 build-jinja:
-  FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12
+  FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12@sha256:04a16d3b867ae233ebc28effcb8cc781f2651ecb69104261818a2168dd5e9beb
   RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
       install jinja2-cli
   RUN jinja2 --version
