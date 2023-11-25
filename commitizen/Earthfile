@@ -29,7 +29,6 @@ commitizen:
   COPY bin/release-cz-bump /usr/local/bin/release-cz-bump
   COPY --if-exists info+git-status/git-dirty /git-dirty
   DO manifests+MANIFEST \
-    --JINJA_IMAGE="build-jinja" \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
   DO manifests+STANDARD_LABEL
@@ -38,12 +37,14 @@ commitizen:
 
 run-cz:
   LOCALLY
+  ARG CZ_IMAGE="ghcr.io/nalabelle/build/commitizen/commitizen:0.0.1"
   ARG INPUT_PROJECT_PATH=.
   ARG INPUT_DEBUG="false"
   # match GitHub Action workflow
   LET _path=$(git rev-parse --show-toplevel)
   RUN echo "Working in: ${_path}"
-  WITH DOCKER --load=+commitizen
+  #WITH DOCKER --load +commitizen
+  WITH DOCKER --pull $CZ_IMAGE
     # 100% transferring docker... shows up too late and overwrites output sometimes
     RUN docker run --rm -t \
       --user $(id -u):$(id -g) \
@@ -51,5 +52,5 @@ run-cz:
       -e INPUT_DEBUG \
       -v${_path}:/github/workspace \
       --workdir="/github/workspace" \
-      commitizen release-cz-bump
+      $CZ_IMAGE release-cz-bump
   END
