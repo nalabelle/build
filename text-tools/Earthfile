@@ -13,7 +13,7 @@ build:
   BUILD +jinja
 
 build-jinja:
-  FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12@sha256:04a16d3b867ae233ebc28effcb8cc781f2651ecb69104261818a2168dd5e9beb
+  FROM ghcr.io/nalabelle/build/images/python:0.1.0-python3.12@sha256:1799e3a8ecab5eaf1081a5d044523938711befbf4f71a8407cad6e4d42ece1c5
   RUN PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx \
       install jinja2-cli
   RUN jinja2 --version
