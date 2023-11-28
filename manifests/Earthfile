@@ -131,7 +131,7 @@ git-dirty:
     LOCALLY
     SET GIT_STATUS=$(test -z "$(git status --porcelain)" && echo "clean" || echo "dirty")
   END
-  FROM ghcr.io/nalabelle/build/images/debian:0.1.0
+  FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:23e747ec742e2b868338f837c74aaf2cc5332f9d8e678c0316553997837a827c
   IF [ "$GIT_STATUS" = "dirty" ]
     RUN echo "dirty" > /git-dirty
   END
