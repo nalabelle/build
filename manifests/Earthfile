@@ -63,7 +63,7 @@ MANIFEST:
   LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' /manifest.json)"
   LABEL "org.opencontainers.image.created"="$(jq -r '.buildTime' /manifest.json)"
 build-manifest:
-  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.0.1@sha256:f3853fea98d736f3ee7e9c6162e2357075eb85a2b1dae1df90bf18fb2ad17eb4"
+  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.1.0@sha256:1a0b6e98698b893d1b762abb16662cfd0184a059c2b84f143d58dbf268ca9c71"
   # component info
   ARG --required VERSION
   ARG --required COMPONENT
