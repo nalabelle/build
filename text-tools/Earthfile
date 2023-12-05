@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:23e747ec742e2b868338f837c74aaf2cc5332f9d8e678c0316553997837a827c
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:56009f1016d17cf5fadacdc06ea404674f5cca4ecff2fa957a0ed891453c7fc9
 IMPORT ../manifests AS manifests
 
 ARG --global __COMPONENT__="text-tools"
