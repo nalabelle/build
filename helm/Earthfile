@@ -14,7 +14,7 @@ build:
   BUILD +helmfile
 
 helmfile:
-  FROM ghcr.io/helmfile/helmfile:v0.159.0@sha256:68237dccb58c595c0d45c682d413a126f8615d0cd7f4ac6fd906ad6f4a016862
+  FROM ghcr.io/helmfile/helmfile:v0.161.0@sha256:845943a6077314d5102295a65967a95c21a41bbe13f1dd2c4d1ef6ff67bb913a
   DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
