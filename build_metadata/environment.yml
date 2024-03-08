@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+dependencies:
+  - rust ~=1.76
+  - openssl ~=3.2.1
+  - conda-lock ~=2.5.5
