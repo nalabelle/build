@@ -51,6 +51,6 @@ jobs:
           [ -n "${{ inputs.workdir }}" ] && pushd "${{ inputs.workdir }}"
           earthly \
             --ci \
-            ${{ inputs.cache && format('--{0}', inputs.cache) || '' }} \
+            ${{ inputs.cache && format('--remote-cache={0}', inputs.cache) || '' }} \
             ${{ (github.event_name == 'push' && github.ref_name == 'main') && '--push' || '' }} \
             "${{ inputs.target }}"
