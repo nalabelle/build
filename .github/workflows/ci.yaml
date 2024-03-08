@@ -4,7 +4,11 @@ on:
   workflow_call:
     inputs:
       workdir:
-        required: true
+        required: false
+        type: string
+      target:
+        default: '+build-all-platforms'
+        required: false
         type: string
 
 env:
@@ -41,8 +45,8 @@ jobs:
       - name: Build
         # Only push if this was a merge to main
         run: |
-          cd ${{ inputs.workdir }}
+          [ -n "${{ inputs.workdir }}" ] && pushd "${{ inputs.workdir }}"
           earthly \
             --ci \
             ${{ (github.event_name == 'push' && github.ref_name == 'main') && '--push' || '' }} \
-            +build-all-platforms
+            "${{ inputs.target }}"
