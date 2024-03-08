@@ -12,4 +12,19 @@ git2 = "0.18.2"
 
 [dev-dependencies]
 tempfile = "3.1.0"
-cargo-tarpaulin = "0.27.3"
+
+[package.metadata.bin]
+cargo-cmd = { version = "0.3.1" }
+cargo-llvm-cov = { version = "0.6.6" }
+cargo-nextest = { version = "0.9.67" }
+cargo-tarpaulin = { version = "0.27.3" }
+
+[package.metadata.commands]
+nextest = '''set -e
+  cargo llvm-cov nextest
+  rm -f *.profraw
+'''
+
+coverage = '''set -e
+  cargo tarpaulin --engine llvm
+'''
