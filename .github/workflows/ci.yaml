@@ -10,6 +10,9 @@ on:
         default: '+build-all-platforms'
         required: false
         type: string
+      cache:
+        required: false
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -48,5 +51,6 @@ jobs:
           [ -n "${{ inputs.workdir }}" ] && pushd "${{ inputs.workdir }}"
           earthly \
             --ci \
+            ${{ inputs.cache && format('--{0}', inputs.cache) || '' }} \
             ${{ (github.event_name == 'push' && github.ref_name == 'main') && '--push' || '' }} \
             "${{ inputs.target }}"
