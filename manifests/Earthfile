@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:56009f1016d17cf5fadacdc06ea404674f5cca4ecff2fa957a0ed891453c7fc9
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:3d3744d39e91f13b20c094a3d43f76bf4739f68750252ab71d9bf99813cbe173
 
 PRINT:
   COMMAND
