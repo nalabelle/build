@@ -60,12 +60,12 @@ jobs:
       - name: Build Target
         if: ${{ (github.event_name != 'push' || github.ref_name != 'main') }}
         working-directory: ${{ inputs.workdir }}
-        run: earthly --ci "${{ inputs.target }}"
+        run: earthly --secret GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} --ci --push "${{ inputs.target }}"
       - name: Build Target and Push
         # Only push if this was a merge to main
         if: ${{ (github.event_name == 'push' && github.ref_name == 'main') }}
         working-directory: ${{ inputs.workdir }}
-        run: earthly --ci --push "${{ inputs.target }}"
+        run: earthly --secret GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} --ci --push "${{ inputs.target }}"
       - name: Release
         if: ${{ (github.event_name == 'push' && github.ref_name == 'main') && inputs.release && inputs.release_name != '' }}
         uses: actions/upload-artifact@v4
