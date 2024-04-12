@@ -67,7 +67,7 @@ jobs:
         working-directory: ${{ inputs.workdir }}
         run: earthly --ci --push "${{ inputs.target }}"
       - name: Release
-        if: ${{ (github.event_name == 'push' && github.ref_name == 'main') && inputs.release && inputs.release_name != "" }}
+        if: ${{ (github.event_name == 'push' && github.ref_name == 'main') && inputs.release && inputs.release_name != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: "${{ inputs.release_name }}"
