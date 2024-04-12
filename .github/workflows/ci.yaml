@@ -17,9 +17,17 @@ on:
       cache:
         required: false
         type: string
+      release:
+        required: false
+        default: false
+        type: boolean
+      release_name:
+        required: false
+        type: string
 
 env:
   REGISTRY: ghcr.io
+  EARTHLY_REMOTE_CACHE: ${{ inputs.cache && format('--remote-cache={0}', inputs.cache) }}
 
 jobs:
   build:
@@ -49,12 +57,19 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build
+      - name: Build Target
+        if: ${{ (github.event_name != 'push' || github.ref_name != 'main') }}
+        working_directory: ${{ $inputs.workdir }}
+        run: earthly --ci "${{ inputs.target }}"
+      - name: Build Target and Push
         # Only push if this was a merge to main
-        run: |
-          [ -n "${{ inputs.workdir }}" ] && pushd "${{ inputs.workdir }}"
-          earthly \
-            --ci \
-            ${{ inputs.cache && format('--remote-cache={0}', inputs.cache) || '' }} \
-            ${{ (github.event_name == 'push' && github.ref_name == 'main') && '--push' || '' }} \
-            "${{ inputs.target }}"
+        if: ${{ (github.event_name == 'push' && github.ref_name == 'main') }}
+        working_directory: ${{ $inputs.workdir }}
+        run: earthly --ci --push "${{ inputs.target }}"
+      - name: Release
+        if: ${{ (github.event_name == 'push' && github.ref_name == 'main') && inputs.release && inputs.release_name != "" }}
+        working_directory: ${{ $inputs.workdir }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: {{ inputs.release_name }}
+          path: dist/*
