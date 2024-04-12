@@ -27,7 +27,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  EARTHLY_REMOTE_CACHE: ${{ inputs.cache && format('--remote-cache={0}', inputs.cache) }}
+  EARTHLY_REMOTE_CACHE: ${{ inputs.cache }}
 
 jobs:
   build:
