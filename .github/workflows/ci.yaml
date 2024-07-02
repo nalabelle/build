@@ -48,11 +48,11 @@ jobs:
         with:
           version: ${{ inputs.earthly_version }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
           ref: ${{ github.head_ref || github.ref_name }}
       - name: Log into registry ${{ env.REGISTRY }}
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
