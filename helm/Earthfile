@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:56009f1016d17cf5fadacdc06ea404674f5cca4ecff2fa957a0ed891453c7fc9
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:74abd74a8b76cf800917e23c9f4d2a391723817886a7cccd16a2d2f000bb107b
 IMPORT ../manifests AS manifests
 
 ARG --global __COMPONENT__="helm"
@@ -14,7 +14,7 @@ build:
   BUILD +helmfile
 
 helmfile:
-  FROM ghcr.io/helmfile/helmfile:v0.159.0@sha256:68237dccb58c595c0d45c682d413a126f8615d0cd7f4ac6fd906ad6f4a016862
+  FROM ghcr.io/helmfile/helmfile:v0.169.1@sha256:85f7701489b540d5a9a5ae60ddf6adfe47a498163cba1d4f5f30c95855112a28
   DO --pass-args manifests+MANIFEST \
     --VERSION=$__VERSION__ \
     --COMPONENT=$__COMPONENT__
@@ -22,7 +22,7 @@ helmfile:
   DO manifests+PRINT
 
 helm:
-  FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:56009f1016d17cf5fadacdc06ea404674f5cca4ecff2fa957a0ed891453c7fc9
+  FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:74abd74a8b76cf800917e23c9f4d2a391723817886a7cccd16a2d2f000bb107b
   # renovate: datasource=github-releases depName=helm/helm
   ARG HELM_VERSION=3.13.1
   COPY (+helm-build/helm --VERSION=${HELM_VERSION}) /usr/local/bin/helm

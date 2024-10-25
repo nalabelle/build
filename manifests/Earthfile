@@ -1,5 +1,5 @@
 VERSION --pass-args --arg-scope-and-set 0.7
-FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:56009f1016d17cf5fadacdc06ea404674f5cca4ecff2fa957a0ed891453c7fc9
+FROM ghcr.io/nalabelle/build/images/debian:0.1.0@sha256:74abd74a8b76cf800917e23c9f4d2a391723817886a7cccd16a2d2f000bb107b
 
 PRINT:
   COMMAND
@@ -63,7 +63,7 @@ MANIFEST:
   LABEL "org.opencontainers.image.revision"="$(jq -r '.source.id' /manifest.json)"
   LABEL "org.opencontainers.image.created"="$(jq -r '.buildTime' /manifest.json)"
 build-manifest:
-  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.1.0@sha256:211cbcef2c8828cd655cdc91458187205d5b50e7c26ee2d110be539d8cc2795e"
+  ARG JINJA_IMAGE="ghcr.io/nalabelle/build/text-tools/jinja:0.1.0@sha256:a49244e35d7961e830c4eaddb356d700f0578d7b2e4c4e38c7ab3f4cf03ebdd7"
   # component info
   ARG --required VERSION
   ARG --required COMPONENT
